@@ -119,7 +119,7 @@ def main():
     upload_torrent = not args.no_upload
 
     print 'Logging in to RED...'
-    api = redactedapi.RedactedAPI(username, password, host)
+    api = redactedapi.RedactedAPI(username, password, host, tracker)
 
     try:
         seen = pickle.load(open(args.cache))
