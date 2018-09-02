@@ -65,7 +65,7 @@ class RequestException(Exception):
     pass
 
 class RedactedAPI:
-    def __init__(self, username=None, password=None):
+    def __init__(self, username=None, password=None, host="https://redacted/ch", tracker="https://flacsfor.me"):
         self.session = requests.Session()
         self.session.headers.update(headers)
         self.username = username
@@ -73,14 +73,15 @@ class RedactedAPI:
         self.authkey = None
         self.passkey = None
         self.userid = None
-        self.tracker = "https://flacsfor.me/"
+        self.host = host
+        self.tracker = "%s/" % tracker.rstrip('/')
         self.last_request = time.time()
         self.rate_limit = 2.0 # seconds between requests
         self._login()
 
     def _login(self):
         '''Logs in user and gets authkey from server'''
-        loginpage = 'https://redacted.ch/login.php'
+        loginpage = '%s/login.php' % self.host
         data = {'username': self.username,
                 'password': self.password}
         r = self.session.post(loginpage, data=data)
@@ -92,14 +93,14 @@ class RedactedAPI:
         self.userid = accountinfo['id']
 
     def logout(self):
-        self.session.get("https://redacted.ch/logout.php?auth=%s" % self.authkey)
+        self.session.get("%s/logout.php?auth=%s" % (self.host, self.authkey))
 
     def request(self, action, **kwargs):
         '''Makes an AJAX request at a given action page'''
         while time.time() - self.last_request < self.rate_limit:
             time.sleep(0.1)
 
-        ajaxpage = 'https://redacted.ch/ajax.php'
+        ajaxpage = '%s/ajax.php' % self.host
         params = {'action': action}
         if self.authkey:
             params['auth'] = self.authkey
@@ -118,7 +119,7 @@ class RedactedAPI:
         while time.time() - self.last_request < self.rate_limit:
             time.sleep(0.1)
 
-        ajaxpage = 'https://redacted.ch/' + action
+        ajaxpage = '%s/%s' % (self.host, action)
         if self.authkey:
             kwargs['auth'] = self.authkey
         r = self.session.get(ajaxpage, params=kwargs, allow_redirects=False)
@@ -161,7 +162,7 @@ class RedactedAPI:
         else:
             media_params = ['&media=%s' % media_search_map[m] for m in media]
 
-        url = 'https://redacted.ch/torrents.php?type=snatched&userid=%s&format=FLAC' % self.userid
+        url = '%s/torrents.php?type=snatched&userid=%s&format=FLAC' % (self.host, self.userid)
         for mp in media_params:
             page = 1
             done = False
@@ -175,7 +176,7 @@ class RedactedAPI:
                 page += 1
 
     def upload(self, group, torrent, new_torrent, format, description=[]):
-        url = "https://redacted.ch/upload.php?groupid=%s" % group['group']['id']
+        url = "%s/upload.php?groupid=%s" % (self.host, group['group']['id'])
         response = self.session.get(url)
         forms = mechanize.ParseFile(StringIO(response.text.encode('utf-8')), url)
         form = forms[-1]
@@ -199,7 +200,7 @@ class RedactedAPI:
         return self.session.post(url, data=data, headers=dict(headers))
 
     def set_24bit(self, torrent):
-        url = "https://redacted.ch/torrents.php?action=edit&id=%s" % torrent['id']
+        url = "%s/torrents.php?action=edit&id=%s" % (self.host, torrent['id'])
         response = self.session.get(url)
         forms = mechanize.ParseFile(StringIO(response.text.encode('utf-8')), url)
         form = forms[-3]
@@ -208,10 +209,10 @@ class RedactedAPI:
         return self.session.post(url, data=data, headers=dict(headers))
 
     def release_url(self, group, torrent):
-        return "https://redacted.ch/torrents.php?id=%s&torrentid=%s#torrent%s" % (group['group']['id'], torrent['id'], torrent['id'])
+        return "%s/torrents.php?id=%s&torrentid=%s#torrent%s" % (self.host, group['group']['id'], torrent['id'], torrent['id'])
 
     def permalink(self, torrent):
-        return "https://redacted.ch/torrents.php?torrentid=%s" % torrent['id']
+        return "%s/torrents.php?torrentid=%s" % (self.host, torrent['id'])
 
     def get_better(self, search_type=3, tags=None):
         if tags is None:
@@ -231,7 +232,7 @@ class RedactedAPI:
         while time.time() - self.last_request < self.rate_limit:
             time.sleep(0.1)
 
-        torrentpage = 'https://redacted.ch/torrents.php'
+        torrentpage = '%s/torrents.php' % self.host
         params = {'action': 'download', 'id': torrent_id}
         if self.authkey:
             params['authkey'] = self.authkey

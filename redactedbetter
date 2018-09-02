@@ -90,6 +90,8 @@ def main():
     finally:
         username = config.get('redacted', 'username')
         password = config.get('redacted', 'password')
+        host = config.get('redacted', 'host')
+        tracker = config.get('redacted', 'tracker')
         do_24_bit = config.get('redacted', '24bit_behaviour')
         data_dir = os.path.expanduser(config.get('redacted', 'data_dir'))
         try:
@@ -117,7 +119,7 @@ def main():
     upload_torrent = not args.no_upload
 
     print 'Logging in to RED...'
-    api = redactedapi.RedactedAPI(username, password)
+    api = redactedapi.RedactedAPI(username, password, host)
 
     try:
         seen = pickle.load(open(args.cache))
